@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* istanbul ignore file */
 /**
  * Module dependencies.
  */
@@ -44,16 +45,16 @@ const onError = error => {
   const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
   // handle specific listen errors with friendly messages
   switch (error.code) {
-    case 'EACCES':
-      alert(`${bind} requires elevated privileges`);
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      alert(`${bind} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
+  case 'EACCES':
+    alert(`${bind} requires elevated privileges`);
+    process.exit(1);
+    break;
+  case 'EADDRINUSE':
+    alert(`${bind} is already in use`);
+    process.exit(1);
+    break;
+  default:
+    throw error;
   }
 };
 
@@ -69,7 +70,8 @@ const onListening = () => {
  * Listen on provided port, on all network interfaces.
  */
 server.listen(port, () => {
-  console.log(`Server run http://localhost:${port}`)
+  console.log(`Server run http://localhost:${port}`);
 });
+
 server.on('error', onError);
 server.on('listening', onListening);
