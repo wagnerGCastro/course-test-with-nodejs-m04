@@ -1,5 +1,5 @@
-import { appError } from '@/utils';
-import { logger } from '@/utils';
+import { appError, logger } from '@/utils';
+
 import { User } from '@/database/models/user.model';
 
 export async function listUsers() {
@@ -18,9 +18,11 @@ export async function listUsers() {
 }
 
 export async function findOrSave(email) {
+  let result;
+
   try {
+    result = await User.findOrCreate({ where: { email } });
     logger.info(`User located or created with email: ${email}`);
-    return await User.findOrCreate({ where: { email } });
   } catch (error) {
     /**
      * Ao rejeitar a Promise com um erro, este será
@@ -33,6 +35,8 @@ export async function findOrSave(email) {
       appError(`Failed to retrieve or save user with email: ${email}`),
     );
   }
+
+  return result;
 }
 
 export async function saveUser(data) {
