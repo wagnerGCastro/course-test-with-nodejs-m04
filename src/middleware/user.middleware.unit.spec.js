@@ -21,7 +21,7 @@ describe('Middleware > User', () => {
     get(req, null, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenLastCalledWith(error);
+    expect(next).toHaveBeenCalledWith(error);
   });
 
   it('should forward an error when an email is provided in the headers but is invalid', () => {
@@ -35,7 +35,7 @@ describe('Middleware > User', () => {
     get(req, null, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenLastCalledWith(error);
+    expect(next).toHaveBeenCalledWith(error);
   });
 
   it('should return an user object given a valid email is provided', async () => {
@@ -49,7 +49,7 @@ describe('Middleware > User', () => {
     expect(req.user).toBeDefined();
     expect(req.user).toEqual({ id: 1, email });
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenLastCalledWith(/** nothing */);
+    expect(next).toHaveBeenCalledWith(/** nothing */);
   });
 
   it('should forward an error when service findOrSave fails', async () => {
@@ -62,6 +62,6 @@ describe('Middleware > User', () => {
 
     expect(req.user).toBeUndefined();
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenLastCalledWith('Error fails');
+    expect(next).toHaveBeenCalledWith('Error fails');
   });
 });
