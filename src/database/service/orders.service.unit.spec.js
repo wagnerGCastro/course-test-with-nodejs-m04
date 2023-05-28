@@ -18,7 +18,7 @@ const orders = ordersJson.map(order => {
 });
 
 describe('Database > Service > Orders', () => {
-  beforeEach(() => {
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
