@@ -43,8 +43,8 @@ export async function create(req, res, next) {
  */
 export const validate = method => {
   switch (method) {
-    case 'create': {
-      return [body('products', `Please provide a list of products`).exists()];
-    }
+  case 'create': {
+    return [ body('products', 'Please provide a list of products').exists() ];
+  }
   }
 };
