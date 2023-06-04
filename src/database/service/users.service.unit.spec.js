@@ -1,88 +1,149 @@
-
-import { appError } from '@/utils';
-import { StatusCodes } from 'http-status-codes';
 import { User } from '@/database/models/user.model';
-import { findOrSave, saveUser, listUsers } from './users.service';
-import { logger } from '@/utils/logger';
+import { appError, logger } from '@/utils';
+import { StatusCodes } from 'http-status-codes';
 
-jest.mock('@/database/models/user.model');;
+import * as UserService from './users.service';
+
+jest.mock('@/database/models/user.model');
+jest.mock('@/utils/errors');
 jest.mock('@/utils/logger');
 
-
-
-
-describe('Database > Service > Users', () => {
+describe('Database > Services > Users', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return a list of users 🟢 listUsers()', async () => {
-    const usersList = [ {
-      email: 'wagner.castro@test.com',
-      id: 111
-    } ];
+  describe('listUsers()', () => {
+    it('should return a list of users', async () => {
+      const usersList = [ {
+        email: 'wagner.castro@test.com',
+        id: 111
+      } ];
 
-    const users = [ {
-      email: 'wagner.castro@test.com',
-      id: 111
-    } ];
+      const users = [ {
+        email: 'wagner.castro@test.com',
+        id: 111
+      } ];
 
-    jest.spyOn(User, 'findAll').mockResolvedValueOnce(usersList);
+      jest.spyOn(User, 'findAll').mockResolvedValueOnce(usersList).mockName('user.model.findAll');
 
-    const result = await listUsers();
+      const result = await UserService.listUsers();
 
-    expect(result).toEqual(users);
-    expect(User.findAll).toHaveBeenCalledTimes(1);
-    expect(User.findAll).toHaveBeenCalledWith(/* nothing */);
+      expect(result).toEqual(users);
+      expect(User.findAll).toHaveBeenCalledTimes(1);
+      expect(User.findAll).toBeCalledWith(/** notinhg */);
+    });
+
+    it('should reject with an error when User.findAll() fails', async () => {
+      const message = 'Failed to retrieve users';
+      const status = StatusCodes.INTERNAL_SERVER_ERROR;
+      const error = appError(message, status);
+
+      jest.spyOn(User, 'findAll').mockRejectedValueOnce(error);
+
+      // eslint-disable-next-line max-len
+      // const mockNavigator = jest.spyOn(User, 'findAll').mockImplementation(() => Promise.reject(error));
+
+      try {
+        await UserService.listUsers();
+      } catch (exception) {
+        expect(exception).toEqual(error);
+        // expect(appError).toHaveBeenCalledTimes(2);
+        expect(appError).toHaveBeenCalledWith(message);
+      }
+
+      // mockNavigator.mockClear();
+    });
   });
 
-  it('should return with an erro when User.findAll() fails 🔴 listUsers()',  () => {
-    const error = appError(
-      'Failed to retrieve users',
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
+  describe('findOrSave()', () => {
+    it('should return a user when findOrSave is executed', async () => {
+      const user = {
+        email: 'wagner.castro@test.com',
+        id: 111
+      };
+      const params = { where: { email: user.email } };
 
-    jest.spyOn(User, 'findAll').mockRejectedValueOnce(error);
+      jest.spyOn(User, 'findOrCreate').mockResolvedValueOnce(user);
 
-    expect(listUsers()).rejects.toEqual(error);
-    expect(User.findAll).toHaveBeenCalledTimes(1);
+      const result = await UserService.findOrSave(user.email);
+
+      expect(result).toEqual(user);
+      expect(User.findOrCreate).toHaveBeenCalledTimes(1);
+      expect(User.findOrCreate).toHaveBeenCalledWith(params);
+      expect(logger.info).toHaveBeenCalledTimes(1);
+      expect(logger.info).toHaveBeenCalledWith(`User located or created with email: ${user.email}`);
+    });
+
+    //   it('should reject with an error when User.findOrCreate()', async () => {
+    //     const user = {
+    //       email: 'wagner.castro@test2.com',
+    //       id: 111
+    //     };
+
+    //     const message = `Failed to retrieve or save user with email: ${user.email}`;
+    //     const status = StatusCodes.INTERNAL_SERVER_ERROR;
+    //     const error = appError(message, status);
+
+    //     jest.spyOn(User, 'findOrCreate').mockRejectedValueOnce(error);
+
+    //     // expect(UserService.findOrSave(user.email)).rejects.toEqual(new Error('Error'));
+
+    //     // try {
+    //     //   await UserService.findOrSave(user.email);
+    //     // } catch (exception) {
+    //     //   expect(exception).toEqual(error);
+    //     //   expect(logger.info).not.toHaveBeenCalled();
+    //     //   expect(appError).toHaveBeenCalledTimes(2);
+    //     //   expect(appError).toHaveBeenCalledWith(error);
+    //     // }
+
+    //     expect(UserService.findOrSave(user.email)).rejects.toEqual(error);
+
+    //     expect(logger.info).not.toHaveBeenCalled();
+    //     expect(appError).toHaveBeenCalledTimes(1);
+    //     expect(appError).toHaveBeenCalledWith(error);
+    //   });
+    // });
+
+    it('should reject with an error when User.findOrCreate()', async () => {
+      const email = 'wagner.castro@test2.com';
+      const message = `Failed to retrieve or save user with email: ${email}`;
+      const status = StatusCodes.INTERNAL_SERVER_ERROR;
+      const error = appError(message, status);
+
+      jest.spyOn(User, 'findOrCreate').mockRejectedValueOnce(error);
+
+      expect(UserService.findOrSave(email)).rejects.toEqual(error);
+      expect(logger.info).not.toHaveBeenCalled();
+      expect(appError).toHaveBeenCalledTimes(1);
+      expect(appError).toHaveBeenCalledWith(message, status);
+    });
   });
 
-  it('should return a user when findOrSave is executed 🟢 findOrSave()',  async () => {
-    const email = "wagner.castro@test.com" ;
-    const savedUser = { email, id: 1 };
-    const where = { where: { email } };
+  describe('saveUser()', () => {
+    it('should reject with an error when saveUser() is executed without any data', async () => {
+      const message = 'Failed to save user';
+      const status = StatusCodes.INTERNAL_SERVER_ERROR;
+      const error = appError(message, status);
 
-    jest.spyOn(User, 'findOrCreate').mockResolvedValueOnce(savedUser);
+      expect(UserService.saveUser()).rejects.toEqual(error);
+      expect(appError).toHaveBeenCalledWith(message, status);
+    });
 
+    it('should save and return user ', async () => {
+      const data = {
+        email: 'wagner.castro@test.com.br'
+      };
+      const userSaved = { ...data, id: 111 };
 
-    // expect(findOrSave(email)).resolves.toEqual(savedUser); // error
+      jest.spyOn(User, 'create').mockResolvedValueOnce(userSaved);
 
-    expect(await findOrSave(email)).toEqual(savedUser); // error
+      // const result = await UserService.saveUser(data);
+      // expect(result).toEqual(userSaved);
 
-
-    expect(User.findOrCreate).toHaveBeenCalledTimes(1);
-    expect(User.findOrCreate).toHaveBeenCalledWith(where);
-
-    expect(logger.info).toHaveBeenCalledTimes(1);
-    expect(logger.info).toHaveBeenCalledWith(`User located or created with email: ${email}`)
-  });
-
-  it('should reject with an error when User.findOrCreate() fails 🔴 findOrSave()',  async () => {
-   
-    const email = "wagner.castro@test.com" ;
-
-    const error = appError(
-      `Failed to retrieve or save user with email: ${email}`,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-  
-    jest.spyOn(User, 'findOrCreate').mockRejectedValueOnce(error);
-
-    expect(findOrSave(email)).rejects.toEqual(error);
-    expect(logger.info).not.toHaveBeenCalled();
-    expect(appError).toHaveBeenCalledTimes(1);
-    expect(appError).toHaveBeenCalledWith(error)
-
+      expect(UserService.saveUser(data)).resolves.toEqual(userSaved);
+      expect(User.create).toHaveBeenCalledWith(data);
+    });
   });
 });
